@@ -3,6 +3,10 @@ project(fluidSim VERSION 0.1.0)
 
 add_executable(fluidSim
     src/main.cpp
+    src/utils/constatns.cpp
+    src/utils/functions.cpp
+    src/utils/shadersInit.cpp
+    src/classes/Circle.cpp
 )
 
 include(FetchContent)
