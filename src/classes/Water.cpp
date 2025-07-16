@@ -12,7 +12,10 @@ Water::Water(int countParticlesRoot, float gap){
 
 void Water::update(float dt){
     for(int i = 0;i != this->particles.size();i++){
-        this->particles[i]->update(dt, this->particles);
+        this->particles[i]->update(dt);
+    }
+    for(int i = 0;i != this->particles.size();i++){
+        this->particles[i]->physical(this->particles);
     }
 }
 

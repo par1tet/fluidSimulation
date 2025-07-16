@@ -14,5 +14,6 @@ public:
     Circle(glm::vec3 position, glm::vec3 velocity, glm::vec3 acceleration, float radius);
 
     void drawCircle(GLuint shaderProgram);
-    void update(float dt, std::vector<Circle*> otherCircles);
+    void update(float dt);
+    void physical(std::vector<Circle*> otherCircles);
 };

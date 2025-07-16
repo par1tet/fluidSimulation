@@ -48,10 +48,12 @@ void Circle::drawCircle(GLuint shaderProgram){
 
 }
 
-void Circle::update(float dt, std::vector<Circle*> otherCircles){
+void Circle::update(float dt){
     this->velocity += this->acceleration * dt;
     this->position += this->velocity * dt;
+}
 
+void Circle::physical(std::vector<Circle*> otherCircles){
     if(this->position.y < (-HEIGHT/2 + this->radius)){
         this->position.y = (-HEIGHT/2 + this->radius);
         this->velocity.y *= 0;
@@ -73,10 +75,15 @@ void Circle::update(float dt, std::vector<Circle*> otherCircles){
         glm::vec3 direct = this->position - otherCircles[i]->position;
 
         if(distantce < (this->radius + otherCircles[i]->radius)){
-            this->color.x = 0.f;
-
             this->position -= glm::normalize(direct) * (distantce - (this->radius + otherCircles[i]->radius));
-            this->velocity *= (0.0f) * -1;
+            this->velocity *= (.0f) * -1;
+        }
+
+        if(distantce <= 40){
+            this->velocity += glm::normalize(direct)*(10.f);
         }
     }
+
+    this->color.y = 1.f - glm::length(this->velocity)/150.f;
+    this->color.z = 1.f - glm::length(this->velocity)/150.f;
 }

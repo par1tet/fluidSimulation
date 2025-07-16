@@ -14,7 +14,7 @@ int main(){
       	std::string(std::string(CMAKE_SOURCE) + "shaders/fragment_shader.glsl").c_str()
     );   
     
-    Water* water = new Water(4, 15);
+    Water* water = new Water(20, 15);
 
     float dt = 1/60.f;
 
