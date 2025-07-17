@@ -2,6 +2,7 @@
 #include<utils/functions.hpp>
 #include<utils/shaderInit.hpp>
 #include<classes/Water.hpp>
+#include<classes/WaterControl.hpp>
 
 int main(){
     GLFWwindow* window = initGlfwWindowAndGlad();
@@ -15,9 +16,9 @@ int main(){
     );   
     
     Water* water = new Water(20, 15);
+    WaterControl* waterControl = new WaterControl(window, water);
 
     float dt = 1/60.f;
-
     while(!glfwWindowShouldClose(window))
     {
         glfwPollEvents();
@@ -27,6 +28,7 @@ int main(){
 
         water->draw(shaderProgram);
         water->update(dt);
+        waterControl->update();
         
         glfwSwapBuffers(window);
     }

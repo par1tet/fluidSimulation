@@ -8,6 +8,7 @@ add_executable(fluidSim
     src/utils/shadersInit.cpp
     src/classes/Circle.cpp
     src/classes/Water.cpp
+    src/classes/WaterControl.cpp
 )
 
 include(FetchContent)
