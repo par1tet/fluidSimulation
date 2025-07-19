@@ -43,14 +43,11 @@ void WaterControl::mouseButtonCallback(GLFWwindow* window, int button, int actio
 void WaterControl::attractParticles(){
     glm::vec3 thisMouse3v = {this->mousePos.x - WIDTH/2, HEIGHT/2 - this->mousePos.y, 0.f};
 
-    std::cout << thisMouse3v.y << std::endl;
-
     for(int i = 0;i != this->water->particles.size();i++){
         float distance = glm::distance(this->water->particles[i]->position, thisMouse3v);
         glm::vec3 direct = this->water->particles[i]->position - thisMouse3v;
 
         if(distance <= 120){
-            std::cout << "pines" << std::endl;
             this->water->particles[i]->velocity -= glm::normalize(direct) * 120.f;
         }
     }
@@ -59,14 +56,11 @@ void WaterControl::attractParticles(){
 void WaterControl::pushAwayParticles(){
     glm::vec3 thisMouse3v = {this->mousePos.x - WIDTH/2, HEIGHT/2 - this->mousePos.y, 0.f};
 
-    std::cout << thisMouse3v.y << std::endl;
-
     for(int i = 0;i != this->water->particles.size();i++){
         float distance = glm::distance(this->water->particles[i]->position, thisMouse3v);
         glm::vec3 direct = this->water->particles[i]->position - thisMouse3v;
 
         if(distance <= 120){
-            std::cout << "pines" << std::endl;
             this->water->particles[i]->velocity += glm::normalize(direct) * 120.f;
         }
     }

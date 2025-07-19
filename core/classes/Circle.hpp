@@ -5,6 +5,7 @@
 #include<glad/glad.h>
 #include<utils/constants.hpp>
 #include<vector>
+#include<cmath>
 
 class Circle{
 public:
