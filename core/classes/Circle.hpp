@@ -16,5 +16,5 @@ public:
 
     void drawCircle(GLuint shaderProgram);
     void update(float dt);
-    void physical(std::vector<Circle*> otherCircles);
+    void physical(std::vector<Circle*> otherCircles, SPHConstans config);
 };
