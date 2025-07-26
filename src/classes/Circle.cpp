@@ -53,87 +53,85 @@ void Circle::update(float dt){
     this->position += this->velocity * dt;
 }
 
-float calculateMagnitude(float distance, float radius){
-    float a = 1/3;
-
-    float absDist = sqrt(distance*distance);
-    float max = glm::max(0.f, radius*radius - (absDist*absDist*a*a));
-
-    return max*max*max/a;
-}
-
 float kernelFunction(float distance, float smoothRadius){
-    float q = distance / (smoothRadius * 100);
-    float sigma = 10/(7*M_PI);
+    float q = distance / (smoothRadius);
+    float sigma = 10.f/(7.f*M_PI*smoothRadius*smoothRadius);
 
-    if(0 <= q < 1){
-        return sigma * (1 - (3/2)*(q*q) + (3/4)*(q*q*q));
-    }else if(1 <= q < 2){
-        return sigma * (((2-q)*(2-q)*(2-q))/4);
+    if(0 <= q && q < 1){
+        return sigma * (1 - (3.f/2.f)*(q*q) + (3.f/4.f)*(q*q*q));
+    }else if(1 <= q && q < 2){
+        return sigma * (((2-q)*(2-q)*(2-q))/4.f);
     }
 
-    return 0;
+    return 0.f;
 }
 
-float gradientKernelFunction(float distance, float smoothRadius){
-    float q = distance/(smoothRadius*100);
-    float sigma = 10/(7*M_PI*(smoothRadius*smoothRadius*smoothRadius*smoothRadius*100000000));
-
-    if(0 <= q < 1){
-        return sigma * distance * (-3*q + (9/4)*(q*q));
-    }else if(1 <= q < 2){
-        return sigma * distance * ((-3/4)*((2-q)*(2-q)));
+glm::vec3 gradientKernelFunction(glm::vec3 d, float smoothRadius) {
+    float r = glm::length(d);
+    if (r < 1e-5f) return glm::vec3(0.f);
+    
+    float q = r / smoothRadius;
+    float sigma = 10.f / (7.f * M_PI * smoothRadius * smoothRadius);
+    
+    float dW_dq;
+    if (0 <= q && q < 1) {
+        dW_dq = sigma * (-3.f * q + (9.f/4.f) * q * q);
+    } else if (1 <= q && q < 2) {
+        dW_dq = sigma * (-3.f/4.f) * (2.f - q) * (2.f - q);
+    } else {
+        return glm::vec3(0.f);
     }
-
-    return 0;
+    
+    return (dW_dq / smoothRadius) * (d / r);
 }
 
-std::vector<float> calcDensityField(std::vector<Circle*> otherCircles, SPHConstans config){
-    std::vector<float> densityField;
-    float jSum = 0;
-
-    for(int i = 0;i != otherCircles.size();i++){
-        jSum = 0;
-
-        glm::vec3 currentPosition = otherCircles[i]->position;
-
-        for(int j = 0;j != otherCircles.size();j++){
+std::vector<float> calcDensityField(std::vector<Circle*> circles, SPHConstans config) {
+    std::vector<float> densities(circles.size(), 0.f);
+    
+    for(int i = 0; i < circles.size(); i++) {
+        for(int j = 0; j < circles.size(); j++) {
             if(i == j) continue;
-
-            float distance = glm::distance(currentPosition, otherCircles[j]->position);
-
-            jSum += config.massParticle * kernelFunction(distance, config.smoothRadius);
+            
+            float dist = glm::distance(circles[i]->position, circles[j]->position);
+            if(dist < 2.f * config.smoothRadius) {
+                densities[i] += config.massParticle * kernelFunction(dist, config.smoothRadius);
+            }
         }
+        densities[i] = fmax(densities[i], config.density * 0.1f);
 
-        densityField.push_back(jSum);
+        std::cout << densities[i] << std::endl;
     }
 
-    return densityField;
+    
+    return densities;
 }
 
 std::vector<float> calcPreassureField(std::vector<float> densityField, SPHConstans config){
     std::vector<float> preassureField;
 
     for(int i = 0;i != densityField.size();i++){
-        preassureField.push_back(config.rigidity*(densityField[i]-config.rigidity)); 
+        preassureField.push_back(config.rigidity*(densityField[i]-config.density)); 
     }
     
     return preassureField;
 }
 
-float preassureForce(std::vector<Circle*> otherCircles, int currentI, std::vector<float> densityField, std::vector<float> preassureField,SPHConstans config){
-    float sum = 0;
+glm::vec3 preassureForce(std::vector<Circle*> otherCircles, int currentI, std::vector<float> densityField, std::vector<float> preassureField,SPHConstans config){
+    glm::vec3 sum = glm::vec3{.0f};
     glm::vec3 currentPosition = otherCircles[currentI]->position;
 
-    for(int j = 0;j != otherCircles.size(), j != currentI;j++){
-        float distance = glm::distance(otherCircles[j]->position, currentPosition);
+    for(int j = 0;j != otherCircles.size();j++){
+        if(j == currentI) continue;
+        glm::vec3 d = currentPosition - otherCircles[j]->position;
         float preassurePart = (
             (preassureField[currentI]/(densityField[currentI]*densityField[currentI]))-
             (preassureField[j]/(densityField[j]*densityField[j]))
         );
 
-        sum += config.massParticle * preassurePart * gradientKernelFunction(distance, config.smoothRadius);
+        sum += config.massParticle * preassurePart * gradientKernelFunction(d, config.smoothRadius);
     }
+
+    std::cout << "x: " << sum.x << "y: " << sum.y << "z: " << sum.z << std::endl;;
 
     return -sum;
 }
@@ -156,18 +154,24 @@ void Circle::physical(std::vector<Circle*> otherCircles, SPHConstans config){
 
     for(int i = 0;i != otherCircles.size();i++){
         float distance = glm::distance(this->position, otherCircles[i]->position);
+        glm::vec3 direct = this->position - otherCircles[i]->position;
 
         if(distance == 0){continue;}
+        
+        if(distance < (this->radius + otherCircles[i]->radius)){
+            this->position -= glm::normalize(direct) * (distance - (this->radius + otherCircles[i]->radius));
+            this->velocity *= (0.0f) * -1;
+        }
 
         // SPH
 
         std::vector<float> densityField = calcDensityField(otherCircles, config);
         std::vector<float> preassureField = calcPreassureField(densityField, config);
-        
-        std::cout << i << std::endl;
-    }
 
-    std::cout << "pines 1" << std::endl;
+        glm::vec3 preassureForceParticle = preassureForce(otherCircles, i, densityField, preassureField, config);
+        
+        this->acceleration += preassureForceParticle / config.massParticle;
+    }
 
     this->color.y = 1.f - glm::length(this->velocity)/150.f;
     this->color.z = 1.f - glm::length(this->velocity)/150.f;
